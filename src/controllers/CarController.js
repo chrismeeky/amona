@@ -15,7 +15,7 @@ class CarController {
      * @param {object} req - HTTP Request object
      * @param {object} res - HTTP Response object
      * @return {res} res - HTTP Response object
-     * @memberof UploadController
+     * @memberof CarController
      */
   static async addCar(req, res) {
     let result;
@@ -94,13 +94,16 @@ class CarController {
    * @param {object} req HTTP Request object
    * @param {object} res HTTP Response object
    * @returns {object} HTTP Response object
-   * @memberof ProfileController
+   * @memberof CarController
    */
   static async updateCarInformation(req, res) {
     const { carId, userInputedLicenseNumber } = req.body;
     try {
       const carExist = await Car.findOne({ _id: carId }).populate('owner');
       if (carExist !== null) {
+        if (carExist.status !== 'available') {
+          return HelperMethods.clientError(res, 'car is no longer available');
+        }
         if (req.decoded.id !== carExist.owner.id) {
           return HelperMethods.clientError(res, 'only car owner can update his car', 401);
         }
@@ -109,16 +112,12 @@ class CarController {
           return HelperMethods.clientError(res,
             'ooops! it seems like this car has been previously registered');
         }
-        const updatedCar = await Car.updateOne({ _id: carId }, { $set: req.body });
-        if (updatedCar) {
-          return HelperMethods
-            .requestSuccessful(res, {
-              success: true,
-              message: 'car information updated successfully',
-            }, 200);
-        }
-        return HelperMethods.serverError(res,
-          'there was a problem while updating car information');
+        await Car.updateOne({ _id: carId }, { $set: req.body });
+        return HelperMethods
+          .requestSuccessful(res, {
+            success: true,
+            message: 'car information updated successfully',
+          }, 200);
       }
       return HelperMethods.clientError(res, 'car not found', 404);
     } catch (error) {
@@ -132,7 +131,7 @@ class CarController {
        * @param {object} req - HTTP Request object
        * @param {object} res - HTTP Response object
        * @return {res} res - HTTP Response object
-       * @memberof UploadController
+       * @memberof CarController
        */
   static async uploadOne(req, res) {
     try {
