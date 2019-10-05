@@ -19,7 +19,8 @@ class CarController {
      */
   static async addCar(req, res) {
     let result;
-    const { id, userInputedLicenseNumber } = req.decoded;
+    const { id } = req.decoded;
+    const { userInputedLicenseNumber } = req.body;
     try {
       const images = Object.keys(req.files);
       if (images.length < 6) {
@@ -81,6 +82,45 @@ class CarController {
       }
       return HelperMethods.clientError(res,
         'license number on both sides of the car must be clear and match');
+    } catch (error) {
+      return HelperMethods.serverError(res, error);
+    }
+  }
+
+  /**
+   *
+   * @description method that updates car's information
+   * @static
+   * @param {object} req HTTP Request object
+   * @param {object} res HTTP Response object
+   * @returns {object} HTTP Response object
+   * @memberof ProfileController
+   */
+  static async updateCarInformation(req, res) {
+    const { carId, userInputedLicenseNumber } = req.body;
+    try {
+      const carExist = await Car.findOne({ _id: carId }).populate('owner');
+      if (carExist.pictures) {
+        if (req.decoded.id !== carExist.owner.id) {
+          return HelperMethods.clientError(res, 'only car owner can update his car', 401);
+        }
+        const licenseExists = await Car.findOne({ userInputedLicenseNumber });
+        if (licenseExists !== null) {
+          return HelperMethods.clientError(res,
+            'ooops! it seems like this car has been previously registered');
+        }
+        const updatedCar = await Car.updateOne({ _id: carId }, { $set: req.body });
+        if (updatedCar) {
+          return HelperMethods
+            .requestSuccessful(res, {
+              success: true,
+              message: 'car information updated successfully',
+            }, 200);
+        }
+        return HelperMethods.serverError(res,
+          'there was a problem while updating car information');
+      }
+      return HelperMethods.serverError(res, 'car not found');
     } catch (error) {
       return HelperMethods.serverError(res, error);
     }
