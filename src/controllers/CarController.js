@@ -134,15 +134,15 @@ class CarController {
    * @returns {object} HTTP Response object
    * @memberof CarController
    */
-  static async findCarsOfDriverPrivate(req, res) {
+  static async findCarsOfOwnerPrivate(req, res) {
     const { id } = req.decoded;
     try {
-      const driversCars = await Car.find({ owner: id });
+      const ownersCars = await Car.find({ owner: id });
 
-      if (!driversCars.length) {
+      if (!ownersCars.length) {
         return HelperMethods.clientError(res, 'no car found');
       }
-      return HelperMethods.requestSuccessful(res, driversCars);
+      return HelperMethods.requestSuccessful(res, ownersCars);
     } catch (error) {
       HelperMethods.serverError(res);
     }
@@ -157,18 +157,41 @@ class CarController {
    * @returns {object} HTTP Response object
    * @memberof CarController
    */
-  static async findCarsOfDriverPublic(req, res) {
+  static async findCarsOfOwnerPublic(req, res) {
     const { id } = req.body;
     try {
-      const carOwner = await User.findOne({ _id: id });
+      const carOwner = await User.find({ _id: id });
       if (!carOwner.private) {
-        const driversCars = await Car.find({ owner: id });
-        if (!driversCars.length) {
+        const ownersCars = await Car.find({ owner: id });
+        if (!ownersCars.length) {
           return HelperMethods.clientError(res, 'no car found');
         }
-        return HelperMethods.requestSuccessful(res, driversCars);
+        return HelperMethods.requestSuccessful(res, ownersCars);
       }
       return HelperMethods.clientError(res, 'owner is private');
+    } catch (error) {
+      HelperMethods.serverError(res);
+    }
+  }
+
+  /**
+   *
+   * @description method that gets a specific car
+   * @static
+   * @param {object} req HTTP Request object
+   * @param {object} res HTTP Response object
+   * @returns {object} HTTP Response object
+   * @memberof CarController
+   */
+  static async findACar(req, res) {
+    const { carId } = req.body;
+    try {
+      const car = await Car.findOne({ _id: carId }).populate('owner',
+        'firstName lastName userName');
+      if (car) {
+        return HelperMethods.requestSuccessful(res, car);
+      }
+      return HelperMethods.clientError(res, 'Car is no longer available');
     } catch (error) {
       HelperMethods.serverError(res);
     }

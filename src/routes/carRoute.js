@@ -13,9 +13,10 @@ const UploadRoute = app => {
     CarController.updateCarInformation);
   app.get('/api/v1/owner/cars',
     Authorization.checkToken,
-    CarController.findCarsOfDriverPrivate);
+    CarController.findCarsOfOwnerPrivate);
   app.get('/api/v1/owner/cars/public',
-    CarController.findCarsOfDriverPublic);
+    CarController.findCarsOfOwnerPublic);
+  app.get('/api/v1/car', CarController.findACar);
 };
 
 export default UploadRoute;
