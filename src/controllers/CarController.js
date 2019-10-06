@@ -1,5 +1,5 @@
 /* eslint-disable no-await-in-loop */
-import { Car } from '../models';
+import { Car, User } from '../models';
 import { cloudinary } from '../config';
 import { ImageProcessor, HelperMethods } from '../utils';
 
@@ -76,7 +76,7 @@ class CarController {
         const car = new Car(req.body);
         const savedCar = await car.save();
         if (savedCar) {
-          return res.status(results[0].status).json(savedCar);
+          return HelperMethods.requestSuccessful(res, savedCar, 201);
         }
         return HelperMethods.serverError(res);
       }
@@ -122,6 +122,55 @@ class CarController {
       return HelperMethods.clientError(res, 'car not found', 404);
     } catch (error) {
       return HelperMethods.serverError(res);
+    }
+  }
+
+  /**
+   *
+   * @description method that pulls the list of cars belonging to a driver
+   * @static
+   * @param {object} req HTTP Request object
+   * @param {object} res HTTP Response object
+   * @returns {object} HTTP Response object
+   * @memberof CarController
+   */
+  static async findCarsOfDriverPrivate(req, res) {
+    const { id } = req.decoded;
+    try {
+      const driversCars = await Car.find({ owner: id });
+
+      if (!driversCars.length) {
+        return HelperMethods.clientError(res, 'no car found');
+      }
+      return HelperMethods.requestSuccessful(res, driversCars);
+    } catch (error) {
+      HelperMethods.serverError(res);
+    }
+  }
+
+  /**
+   *
+   * @description method that pulls the list of cars belonging to a driver
+   * @static
+   * @param {object} req HTTP Request object
+   * @param {object} res HTTP Response object
+   * @returns {object} HTTP Response object
+   * @memberof CarController
+   */
+  static async findCarsOfDriverPublic(req, res) {
+    const { id } = req.body;
+    try {
+      const carOwner = await User.findOne({ _id: id });
+      if (!carOwner.private) {
+        const driversCars = await Car.find({ owner: id });
+        if (!driversCars.length) {
+          return HelperMethods.clientError(res, 'no car found');
+        }
+        return HelperMethods.requestSuccessful(res, driversCars);
+      }
+      return HelperMethods.clientError(res, 'owner is private');
+    } catch (error) {
+      HelperMethods.serverError(res);
     }
   }
 
