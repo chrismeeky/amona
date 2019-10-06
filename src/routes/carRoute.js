@@ -17,6 +17,7 @@ const UploadRoute = app => {
   app.get('/api/v1/owner/cars/public',
     CarController.findCarsOfOwnerPublic);
   app.get('/api/v1/car', CarController.findACar);
+  app.get('/api/v1/cars', CarController.findAllCars);
 };
 
 export default UploadRoute;

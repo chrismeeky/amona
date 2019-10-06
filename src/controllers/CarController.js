@@ -150,7 +150,8 @@ class CarController {
 
   /**
    *
-   * @description method that pulls the list of cars belonging to a driver
+   * @description method that pulls the list of cars belonging to a
+   * driver with a public profile
    * @static
    * @param {object} req HTTP Request object
    * @param {object} res HTTP Response object
@@ -192,6 +193,28 @@ class CarController {
         return HelperMethods.requestSuccessful(res, car);
       }
       return HelperMethods.clientError(res, 'Car is no longer available');
+    } catch (error) {
+      HelperMethods.serverError(res);
+    }
+  }
+
+  /**
+   *
+   * @description method that gets all the available cars
+   * @static
+   * @param {object} req HTTP Request object
+   * @param {object} res HTTP Response object
+   * @returns {object} HTTP Response object
+   * @memberof CarController
+   */
+  static async findAllCars(req, res) {
+    try {
+      const car = await Car.find({ status: 'available' }).populate('owner',
+        'firstName lastName userName');
+      if (car) {
+        return HelperMethods.requestSuccessful(res, car);
+      }
+      return HelperMethods.clientError(res, 'no car was found');
     } catch (error) {
       HelperMethods.serverError(res);
     }
