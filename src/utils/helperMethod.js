@@ -39,7 +39,7 @@ class HelperMethods {
    * @returns {object} res - HTTP response object
    */
   static requestSuccessful(res, payload, status = 200) {
-    return res.status(status).json({ data: { ...payload } });
+    return res.status(status).json({ data: payload });
   }
 
   /* eslint-enable no-useless-escape */
