@@ -156,7 +156,7 @@ class UserController {
    */
   static async updateProfile(req, res) {
     try {
-      const userExist = await User.findOne({ _id: req.body.id });
+      const userExist = await User.findOne({ _id: req.decoded.id });
       if (userExist) {
         if (userExist.isVerified === false) {
           return HelperMethods.clientError(
