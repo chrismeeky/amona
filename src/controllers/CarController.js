@@ -211,12 +211,42 @@ class CarController {
     try {
       const car = await Car.find({ status: 'available' }).populate('owner',
         'firstName lastName userName');
-      if (car) {
+      if (car.length) {
         return HelperMethods.requestSuccessful(res, car);
       }
       return HelperMethods.clientError(res, 'no car was found');
     } catch (error) {
       HelperMethods.serverError(res);
+    }
+  }
+
+  /**
+   *
+   * @description method that deletes a car
+   * @static
+   * @param {object} req HTTP Request object
+   * @param {object} res HTTP Response object
+   * @returns {object} HTTP Response object
+   * @memberof CarController
+   */
+  static async removeCar(req, res) {
+    const { carId } = req.body;
+    try {
+      const carExist = await Car.findOne({ _id: carId }).populate('owner');
+      if (carExist !== null) {
+        if (req.decoded.id !== carExist.owner.id) {
+          return HelperMethods.clientError(res, 'only car owner can update his car', 401);
+        }
+        await Car.remove({ _id: carId });
+        return HelperMethods
+          .requestSuccessful(res, {
+            success: true,
+            message: 'car has been deleted successfully',
+          }, 200);
+      }
+      return HelperMethods.clientError(res, 'car not found', 404);
+    } catch (error) {
+      return HelperMethods.serverError(res);
     }
   }
 
