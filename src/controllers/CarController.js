@@ -40,13 +40,10 @@ class CarController {
           if (result.info.ocr.adv_ocr.status === 'complete') {
             const information = result.info.ocr.adv_ocr.data[0]
               .textAnnotations[0].description.split('\n');
-            console.info(information);
-
-            ImageProcessor.processImage(information, result, results);
+            await ImageProcessor.processImage(information, result, results);
           }
         }
       }
-      console.info('this is the results ', results);
       if (results.length < 6) {
         return res.status(500).json({
           success: false,
@@ -83,7 +80,7 @@ class CarController {
       return HelperMethods.clientError(res,
         'license number on both sides of the car must be clear and match');
     } catch (error) {
-      return HelperMethods.serverError(res, error);
+      return HelperMethods.serverError(res, error.message);
     }
   }
 
@@ -98,11 +95,63 @@ class CarController {
    */
   static async updateCarInformation(req, res) {
     const { carId, userInputedLicenseNumber } = req.body;
+    const fileName = Object.keys(req.files)[0];
+    const results = [];
+
     try {
       const carExist = await Car.findOne({ _id: carId }).populate('owner');
-      if (carExist !== null) {
+
+      if (carExist) {
+        const { pictures } = carExist;
         if (carExist.status !== 'available') {
           return HelperMethods.clientError(res, 'car is no longer available');
+        }
+        // only process image if it is either front or the back side of the car
+        if (fileName === 'front' || fileName === 'back') {
+          const result = await cloudinary.v2.uploader.upload(req.files[fileName].path,
+            {
+              ocr: 'adv_ocr'
+            });
+          if (result.info.ocr.adv_ocr.status === 'complete') {
+            const information = result.info.ocr.adv_ocr.data[0]
+              .textAnnotations[0].description.split('\n');
+            console.info(information);
+
+            await ImageProcessor.processImage(information, result, results);
+            if (results[0].licenseNumber === carExist.extractedLicenseNumber) {
+              req.extractedLicenseNumber = results[0].licenseNumber;
+            } else {
+              HelperMethods.clientError(res, 'You cannot update a different car');
+            }
+          }
+        } else {
+          const result = await cloudinary.v2.uploader.upload(req.files[fileName].path);
+          if (fileName && result.url) {
+            const { url } = result;
+            switch (fileName) {
+              case 'front':
+                pictures[0] = url;
+                break;
+              case 'rear':
+                pictures[1] = url;
+                break;
+              case 'left':
+                pictures[2] = url;
+                break;
+              case 'right':
+                pictures[3] = url;
+                break;
+              case 'first interior':
+                pictures[4] = url;
+                break;
+              case 'second interior':
+                pictures[5] = url;
+                break;
+              default:
+                carExist.pictures = pictures;
+            }
+            req.body.pictures = pictures;
+          }
         }
         if (req.decoded.id !== carExist.owner.id) {
           return HelperMethods.clientError(res, 'only car owner can update his car', 401);
@@ -121,7 +170,7 @@ class CarController {
       }
       return HelperMethods.clientError(res, 'car not found', 404);
     } catch (error) {
-      return HelperMethods.serverError(res);
+      return HelperMethods.serverError(res, error.message);
     }
   }
 
@@ -144,7 +193,7 @@ class CarController {
       }
       return HelperMethods.requestSuccessful(res, ownersCars);
     } catch (error) {
-      HelperMethods.serverError(res);
+      HelperMethods.serverError(res, error.message);
     }
   }
 
@@ -171,7 +220,7 @@ class CarController {
       }
       return HelperMethods.clientError(res, 'owner is private');
     } catch (error) {
-      HelperMethods.serverError(res);
+      HelperMethods.serverError(res, error.message);
     }
   }
 
@@ -194,7 +243,7 @@ class CarController {
       }
       return HelperMethods.clientError(res, 'Car is no longer available');
     } catch (error) {
-      HelperMethods.serverError(res);
+      HelperMethods.serverError(res, error.message);
     }
   }
 
@@ -216,7 +265,7 @@ class CarController {
       }
       return HelperMethods.clientError(res, 'no car was found');
     } catch (error) {
-      HelperMethods.serverError(res);
+      HelperMethods.serverError(res, error.message);
     }
   }
 

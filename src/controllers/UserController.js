@@ -1,4 +1,5 @@
 import { User } from '../models';
+import { cloudinary } from '../config';
 import {
   Authentication, SendEmail, HelperMethods, CryptData
 } from '../utils';
@@ -155,10 +156,17 @@ class UserController {
    * @memberof ProfileController
    */
   static async updateProfile(req, res) {
+    const fileName = Object.keys(req.files)[0];
     try {
+      if (fileName) {
+        const result = await cloudinary.v2.uploader.upload(req.files[fileName].path);
+        if (result.url) {
+          req.body.profilePicture = result.url;
+        }
+      }
       const userExist = await User.findOne({ _id: req.decoded.id });
       if (userExist) {
-        if (userExist.isVerified === false) {
+        if (!userExist.isVerified) {
           return HelperMethods.clientError(
             res, 'You cannot perform this action. You are not a verified user.', 400
           );
@@ -168,7 +176,9 @@ class UserController {
         if (userNameExist) {
           return HelperMethods.clientError(res, 'username already exists');
         }
-        await User.updateOne({ _id: req.body.id }, { $set: req.body });
+        await User.updateOne({ _id: req.decoded.id }, { $set: req.body });
+        const user = await User.findById(req.decoded.id);
+        console.info(user);
         return HelperMethods
           .requestSuccessful(res, {
             success: true,

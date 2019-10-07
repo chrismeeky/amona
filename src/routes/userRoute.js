@@ -12,7 +12,6 @@ const userRoutes = app => {
   app.patch(
     '/api/v1/profile',
     Authorization.checkToken,
-    Authorization.confirmUser,
     Validate.validateUpdateProfile,
     UserController.updateProfile
   );
