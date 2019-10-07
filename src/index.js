@@ -17,5 +17,10 @@ app.use(multipartMiddleware);
 
 routes(app);
 
+app.all('*', (req, res) => res.status(404).json({
+  success: false,
+  message: 'The page you are looking for does not exist'
+}));
+
 const PORT = process.env.PORT || 2000;
 app.listen(PORT, console.info(`server started on port ${PORT}`));
