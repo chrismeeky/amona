@@ -103,6 +103,13 @@ class CarController {
 
       if (carExist) {
         const { pictures } = carExist;
+        if (req.decoded.id !== carExist.owner.id) {
+          return HelperMethods.clientError(res, 'only car owner can update his car', 401);
+        }
+        if (carExist.userInputedLicenseNumber === userInputedLicenseNumber) {
+          return HelperMethods.clientError(res,
+            'ooops! it seems like this car has been previously registered');
+        }
         if (carExist.status !== 'available') {
           return HelperMethods.clientError(res, 'car is no longer available');
         }
@@ -152,14 +159,6 @@ class CarController {
             }
             req.body.pictures = pictures;
           }
-        }
-        if (req.decoded.id !== carExist.owner.id) {
-          return HelperMethods.clientError(res, 'only car owner can update his car', 401);
-        }
-        const licenseExists = await Car.findOne({ userInputedLicenseNumber });
-        if (licenseExists !== null) {
-          return HelperMethods.clientError(res,
-            'ooops! it seems like this car has been previously registered');
         }
         await Car.updateOne({ _id: carId }, { $set: req.body });
         return HelperMethods
