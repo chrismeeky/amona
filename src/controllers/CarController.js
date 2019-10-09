@@ -106,9 +106,13 @@ class CarController {
         if (req.decoded.id !== carExist.owner.id) {
           return HelperMethods.clientError(res, 'only car owner can update his car', 401);
         }
-        if (carExist.userInputedLicenseNumber === userInputedLicenseNumber) {
-          return HelperMethods.clientError(res,
-            'ooops! it seems like this car has been previously registered');
+        if ((userInputedLicenseNumber)
+        && carExist.userInputedLicenseNumber !== userInputedLicenseNumber) {
+          const uploadedBefore = await Car.find({ userInputedLicenseNumber });
+          if (uploadedBefore) {
+            return HelperMethods.clientError(res,
+              'ooops! it seems like this car has been previously registered');
+          }
         }
         if (carExist.status !== 'available') {
           return HelperMethods.clientError(res, 'car is no longer available');
