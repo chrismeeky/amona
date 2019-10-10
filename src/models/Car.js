@@ -62,6 +62,10 @@ const carSchema = Schema({
     max: 500,
     required: true,
   },
+  promoted: {
+    type: Boolean,
+    default: false
+  },
   interval: {
     type: String,
     default: 'weekly',
@@ -73,7 +77,11 @@ const carSchema = Schema({
   contractDuration: {
     type: String,
     default: 'not specified'
-  }
+  },
+  date: {
+    type: Date,
+    default: Date.now
+  },
 
 });
 module.exports = model('Car', carSchema);
